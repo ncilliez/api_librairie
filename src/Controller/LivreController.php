@@ -13,6 +13,8 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\HttpFoundation\Request;
 use App\Entity\Livre;
 use App\Repository\AuthorRepository;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+
 
 class LivreController extends AbstractController
 {
@@ -43,16 +45,15 @@ class LivreController extends AbstractController
     #[Route('/api/livres', name:"createLivre", methods: ['POST'])]
     public function createLivre(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, AuthorRepository $authorRepository): JsonResponse 
     {
-
         $livre = $serializer->deserialize($request->getContent(), Livre::class, 'json');
 
         // Récupération de l'ensemble des données envoyées sous forme de tableau
         $content = $request->toArray();
 
-        // Récupération de l'idAuthor. S'il n'est pas défini, alors on met -1 par défaut.
+        // Récupération de l'idAuteur. S'il n'est pas défini, alors on met -1 par défaut.
         $idAuthor = $content['idAuteur'] ?? -1;
 
-        // On cherche l'auteur qui correspond et on l'assigne au livre.
+        // On cherche l'auteur qui correspond et on l'assigne au livre. (nécéssite d'importer "AuthorRepository")
         // Si "find" ne trouve pas l'auteur, alors null sera retourné.
         $livre->setAuthor($authorRepository->find($idAuthor));
 
@@ -64,6 +65,22 @@ class LivreController extends AbstractController
         $location = $urlGenerator->generate('detailLivre', ['id' => $livre->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
         return new JsonResponse($jsonLivre, Response::HTTP_CREATED, ["Location" => $location], true);
-   }
+    }
+
+    #[Route('/api/livres/{id}', name:"updateLivre", methods:['PUT'])]
+    public function updateLivre(Request $request, SerializerInterface $serializer, Livre $currentLivre, EntityManagerInterface $em, AuthorRepository $authorRepository): JsonResponse 
+    {
+        $updatedLivre = $serializer->deserialize($request->getContent(), 
+                Livre::class, 
+                'json', 
+                [AbstractNormalizer::OBJECT_TO_POPULATE => $currentLivre]);
+        $content = $request->toArray();
+        $idAuthor = $content['idAuteur'] ?? -1;
+        $updatedLivre->setAuthor($authorRepository->find($idAuthor));
+        
+        $em->persist($updatedLivre);
+        $em->flush();
+        return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
+    }
 }
 

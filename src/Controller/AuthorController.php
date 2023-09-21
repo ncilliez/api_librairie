@@ -12,6 +12,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\HttpFoundation\Request;
 use App\Entity\Author;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
 class AuthorController extends AbstractController
 {
@@ -33,6 +34,12 @@ class AuthorController extends AbstractController
     #[Route('/api/auteurs/{id}', name: 'deleteAuthor', methods: ['DELETE'])]
     public function deleteAuthor(Author $author, EntityManagerInterface $em): JsonResponse 
     {
+
+        // Supprimez les livres de l'auteur en cascade
+        foreach ($author->getLivres() as $livre) {
+            $em->remove($livre);
+        }
+
         $em->remove($author);
         $em->flush();
 
@@ -42,7 +49,6 @@ class AuthorController extends AbstractController
     #[Route('/api/auteurs', name:"createAuteur", methods: ['POST'])]
     public function createAuthor(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator): JsonResponse 
     {
-
         $auteur = $serializer->deserialize($request->getContent(), Author::class, 'json');
 
         $em->persist($auteur);
@@ -53,6 +59,19 @@ class AuthorController extends AbstractController
         $location = $urlGenerator->generate('detailAuthor', ['id' => $auteur->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
         return new JsonResponse($jsonAuteur, Response::HTTP_CREATED, ["Location" => $location], true);
+   }
+
+   #[Route('/api/auteurs/{id}', name:"updateAuteur", methods:['PUT'])]
+    public function updateAuteur(Request $request, SerializerInterface $serializer, Author $currentAuteur, EntityManagerInterface $em, AuthorRepository $authorRepository): JsonResponse 
+    {
+        $updatedAuteur = $serializer->deserialize($request->getContent(), 
+                Author::class, 
+                'json', 
+                [AbstractNormalizer::OBJECT_TO_POPULATE => $currentAuteur]);
+        
+        $em->persist($updatedAuteur);
+        $em->flush();
+        return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
    }
 }
 
