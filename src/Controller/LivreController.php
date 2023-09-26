@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\Request;
 use App\Entity\Livre;
 use App\Repository\AuthorRepository;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class LivreController extends AbstractController
 {
@@ -43,10 +43,15 @@ class LivreController extends AbstractController
     }
 
     #[Route('/api/livres', name:"createLivre", methods: ['POST'])]
-    public function createLivre(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, AuthorRepository $authorRepository): JsonResponse 
+    public function createLivre(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, AuthorRepository $authorRepository, ValidatorInterface $validator): JsonResponse 
     {
         $livre = $serializer->deserialize($request->getContent(), Livre::class, 'json');
+        // On vérifie les erreurs
+        $errors = $validator->validate($livre);
 
+        if ($errors->count() > 0) {
+            return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
         // Récupération de l'ensemble des données envoyées sous forme de tableau
         $content = $request->toArray();
 
