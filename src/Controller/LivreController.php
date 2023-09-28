@@ -13,6 +13,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\HttpFoundation\Request;
 use App\Entity\Livre;
 use App\Repository\AuthorRepository;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -34,6 +35,7 @@ class LivreController extends AbstractController
     }
 
     #[Route('/api/livres/{id}', name: 'deleteLivre', methods: ['DELETE'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour créer un livre')]
     public function deleteLivre(Livre $livre, EntityManagerInterface $em): JsonResponse 
     {
         $em->remove($livre);
@@ -43,6 +45,7 @@ class LivreController extends AbstractController
     }
 
     #[Route('/api/livres', name:"createLivre", methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour créer un livre')]
     public function createLivre(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, AuthorRepository $authorRepository, ValidatorInterface $validator): JsonResponse 
     {
         $livre = $serializer->deserialize($request->getContent(), Livre::class, 'json');
@@ -73,6 +76,7 @@ class LivreController extends AbstractController
     }
 
     #[Route('/api/livres/{id}', name:"updateLivre", methods:['PUT'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour créer un livre')]
     public function updateLivre(Request $request, SerializerInterface $serializer, Livre $currentLivre, EntityManagerInterface $em, AuthorRepository $authorRepository): JsonResponse 
     {
         $updatedLivre = $serializer->deserialize($request->getContent(), 
