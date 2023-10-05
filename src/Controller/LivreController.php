@@ -20,9 +20,11 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class LivreController extends AbstractController
 {
     #[Route('/api/livres', name: 'app_livre', methods: ['GET'])]
-    public function getLivreList(LivreRepository $livreRepository, SerializerInterface $serializer): JsonResponse
+    public function getLivreList(LivreRepository $livreRepository, SerializerInterface $serializer, Request $request): JsonResponse
     {
-        $livreList = $livreRepository->findAll();
+        $page = $request->get('page', 1);
+        $limit = $request->get('limit', 3);
+        $livreList = $livreRepository->findAllWithPagination($page, $limit);
         $jsonLivreList = $serializer->serialize($livreList, 'json', ['groups' => 'getLivres']);
         return new JsonResponse($jsonLivreList, Response::HTTP_OK, [], true);
     }
@@ -35,7 +37,7 @@ class LivreController extends AbstractController
     }
 
     #[Route('/api/livres/{id}', name: 'deleteLivre', methods: ['DELETE'])]
-    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour créer un livre')]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour supprimer un livre')]
     public function deleteLivre(Livre $livre, EntityManagerInterface $em): JsonResponse 
     {
         $em->remove($livre);
@@ -76,7 +78,7 @@ class LivreController extends AbstractController
     }
 
     #[Route('/api/livres/{id}', name:"updateLivre", methods:['PUT'])]
-    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour créer un livre')]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour modifier un livre')]
     public function updateLivre(Request $request, SerializerInterface $serializer, Livre $currentLivre, EntityManagerInterface $em, AuthorRepository $authorRepository): JsonResponse 
     {
         $updatedLivre = $serializer->deserialize($request->getContent(), 
