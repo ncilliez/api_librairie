@@ -21,12 +21,24 @@ class LivreRepository extends ServiceEntityRepository
         parent::__construct($registry, Livre::class);
     }
 
-    public function findAllWithPagination($page, $limit) {
+    public function findAllWithPagination($page, $limit, $filtre) {
         $qb = $this->createQueryBuilder('b')
             ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit);
+
+            if (!empty($filtre)) {
+                // Ajouter une condition de filtre sur le titre OU la couverture
+                $qb->andWhere(
+                    $qb->expr()->orX(
+                        $qb->expr()->like('b.titre', ':filtre'),
+                        $qb->expr()->like('b.couverture', ':filtre')
+                    )
+                )->setParameter('filtre', '%' . $filtre . '%');
+            }
+
         return $qb->getQuery()->getResult();
     }
+
 
 //    /**
 //     * @return Livre[] Returns an array of Livre objects

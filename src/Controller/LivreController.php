@@ -24,7 +24,8 @@ class LivreController extends AbstractController
     {
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 3);
-        $livreList = $livreRepository->findAllWithPagination($page, $limit);
+        $filtre = $request->get('filtre', null);
+        $livreList = $livreRepository->findAllWithPagination($page, $limit, $filtre);
         $jsonLivreList = $serializer->serialize($livreList, 'json', ['groups' => 'getLivres']);
         return new JsonResponse($jsonLivreList, Response::HTTP_OK, [], true);
     }
