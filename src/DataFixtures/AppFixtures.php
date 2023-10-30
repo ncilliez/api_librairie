@@ -6,6 +6,7 @@ namespace App\DataFixtures;
 use App\Entity\Livre;
 use App\Entity\Author;
 use App\Entity\User;
+use App\Entity\Document;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -46,12 +47,23 @@ class AppFixtures extends Fixture
             // On sauvegarde l'auteur créé dans un tableau.
             $listAuthor[] = $author;
         }
-        // Création d'une vingtaine de livres ayant pour titre
+        // Création des auteurs.
+        $listDocument = [];
+        for ($i = 0; $i < 5; $i++) {
+            // Création de l'auteur lui-même.
+            $document = new Document();
+            $document->setPathDocument("http://localhost:8000/api/document/test.jpg");
+            $manager->persist($document);
+            // On sauvegarde l'auteur créé dans un tableau.
+            $listDocument[] = $document;
+        }
+        //Création d'une vingtaine de livres ayant pour titre
         for ($i = 0; $i < 20; $i++) {
             $livre = new Livre;
             $livre->setTitre('Livre ' . $i);
             $livre->setCouverture('Quatrième de couverture numéro : ' . $i);
             $livre->setAuthor($listAuthor[array_rand($listAuthor)]);
+            $livre->setDocument($listDocument[array_rand($listDocument)]);
             $manager->persist($livre);
         }
 

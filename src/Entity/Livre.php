@@ -30,6 +30,10 @@ class Livre
     #[Groups(["getLivres"])]
     private ?Author $author = null;
 
+    #[ORM\ManyToOne(inversedBy: 'livre')]
+    #[Groups(["getLivres"])]
+    private ?Document $document = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -67,6 +71,18 @@ class Livre
     public function setAuthor(?Author $author): static
     {
         $this->author = $author;
+
+        return $this;
+    }
+
+    public function getDocument(): ?Document
+    {
+        return $this->document;
+    }
+
+    public function setDocument(?Document $document): static
+    {
+        $this->document = $document;
 
         return $this;
     }
