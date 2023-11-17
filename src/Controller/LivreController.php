@@ -13,6 +13,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\HttpFoundation\Request;
 use App\Entity\Livre;
 use App\Repository\AuthorRepository;
+use App\Repository\DocumentRepository;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -49,7 +50,7 @@ class LivreController extends AbstractController
 
     #[Route('/api/livres', name:"createLivre", methods: ['POST'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour créer un livre')]
-    public function createLivre(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, AuthorRepository $authorRepository, ValidatorInterface $validator): JsonResponse 
+    public function createLivre(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, AuthorRepository $authorRepository, DocumentRepository $documentRepository, ValidatorInterface $validator): JsonResponse 
     {
         $livre = $serializer->deserialize($request->getContent(), Livre::class, 'json');
         // On vérifie les erreurs
@@ -63,10 +64,12 @@ class LivreController extends AbstractController
 
         // Récupération de l'idAuteur. S'il n'est pas défini, alors on met -1 par défaut.
         $idAuthor = $content['idAuteur'] ?? -1;
+        $idDocument = $content['idDocument'] ?? -1;
 
         // On cherche l'auteur qui correspond et on l'assigne au livre. (nécéssite d'importer "AuthorRepository")
         // Si "find" ne trouve pas l'auteur, alors null sera retourné.
         $livre->setAuthor($authorRepository->find($idAuthor));
+        $livre->setDocument($documentRepository->find($idDocument));
 
         $em->persist($livre);
         $em->flush();
@@ -80,7 +83,7 @@ class LivreController extends AbstractController
 
     #[Route('/api/livres/{id}', name:"updateLivre", methods:['PUT'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour modifier un livre')]
-    public function updateLivre(Request $request, SerializerInterface $serializer, Livre $currentLivre, EntityManagerInterface $em, AuthorRepository $authorRepository): JsonResponse 
+    public function updateLivre(Request $request, SerializerInterface $serializer, Livre $currentLivre, EntityManagerInterface $em, AuthorRepository $authorRepository, DocumentRepository $documentRepository): JsonResponse 
     {
         $updatedLivre = $serializer->deserialize($request->getContent(), 
                 Livre::class, 
@@ -88,7 +91,9 @@ class LivreController extends AbstractController
                 [AbstractNormalizer::OBJECT_TO_POPULATE => $currentLivre]);
         $content = $request->toArray();
         $idAuthor = $content['idAuteur'] ?? -1;
+        $idDocument = $content['idDocument'] ?? -1;
         $updatedLivre->setAuthor($authorRepository->find($idAuthor));
+        $updatedLivre->setDocument($documentRepository->find($idDocument));
         
         $em->persist($updatedLivre);
         $em->flush();
